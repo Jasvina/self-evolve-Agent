@@ -3,7 +3,7 @@
 > 最近一次更新: 2026-05。围绕"自进化 / 自改进"的 LLM Agent 的最新综述与代表作。
 > 论文原文 PDF 见 [../papers/](../papers/)。
 
-## 0. TL;DR
+## 0. TL
 
 - LLM 部署后参数静态，但任务、环境、知识在变 — 这是"自进化"的核心动机。
 - 2025–2026 出现了多篇系统综述，把这条线归并到统一框架下：可演化的对象（model / memory / tools / architecture）× 何时演化（test-time / offline / lifelong）× 如何演化（in-context / SFT / RL / self-edit）。
