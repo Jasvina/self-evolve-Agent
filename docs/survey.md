@@ -154,8 +154,14 @@
 
 ## 5. 范式 ④ Self-Edit / 元认知 / 多 agent 自组织
 
-### 5.1 SICA: Self-Improving Coding Agent（Robeyns et al., 2025）
-- agent 自评 → 用 LLM 改自己的源码/prompt/heuristic → 应用 → 再评。SWE-Bench 类任务 +17–53%。
+### 5.1 SICA: A Self-Improving Coding Agent（Robeyns / Szummer / Aitchison）
+- **arXiv**: [2504.15228](https://arxiv.org/abs/2504.15228)（ICLR 2025 Workshop on Scaling Self-Improving Foundation Models）
+- **本地**: `papers/2504.15228_sica_self_improving_coding_agent.pdf`
+- **代码**: <https://github.com/MaximeRobeyns/self_improving_coding_agent>
+- **要点**: 取消 meta-agent 和 target-agent 的区分；维护历代 agent + benchmark 结果的 archive；每轮挑 archive 里表现最好的 agent 作为 meta-agent，让它读 archive、提出改进、把改进 commit 进自己代码。utility 函数综合 benchmark 分数 + wall-clock 时间 + dollar cost。
+- **结果**: SWE-Bench Verified 子集 +17–53%，LiveCodeBench 亦有提升。
+- **vs ADAS**: ADAS 的 meta-agent 固定，archive 存 target agent；SICA 把 meta-agent 也从 archive 选。
+- **安全**: 配 LLM 监督器 + web oversight 界面，应对 self-edit 引入的失控风险。
 
 ### 5.2 Intrinsic Metacognitive Learning（Liu et al., ICML 2025 position）
 - 当前所有"反思类"工作只是 self-improvement 1.0；真正自进化需要 metacognitive knowledge / planning / evaluation 三件套。

@@ -50,6 +50,11 @@
 
 > EvoSkills (arXiv:2604.01687) 多次下载超时，未存档。详情见 `docs/survey.md` §3.3。
 
+### Self-Edit / 元认知
+| 文件 | arXiv ID | 标题 |
+|---|---|---|
+| 2504.15228_sica_self_improving_coding_agent.pdf | 2504.15228 | A Self-Improving Coding Agent (ICLR 2025 Workshop) |
+
 ### RL / 蒸馏到小模型
 | 文件 | arXiv ID | 标题 |
 |---|---|---|
@@ -69,7 +74,6 @@
 - SPEAR (arXiv:2509.22601) — 朴素 replay 的 entropy collapse 风险
 - Your Agent May Misevolve (arXiv:2509.26354, ICLR 2026)
 - Alignment Tipping Process (arXiv:2510.04860)
-- SICA: Self-Improving Coding Agent (Robeyns et al., 2025)
 - Intrinsic Metacognitive Learning (Liu et al., ICML 2025 position)
 - OneManCompany: From Skills to Talent (arXiv:2604.22446)
 - Self-Healing Framework for LLM-Based Agents (arXiv:2605.06737)
