@@ -1,13 +1,14 @@
 # Self-Evolving Agent 调研笔记
 
-> 截至 2026-05。围绕"自进化 / 自改进"的 LLM Agent 的最新综述与代表作。
+> 最近一次更新: 2026-05。围绕"自进化 / 自改进"的 LLM Agent 的最新综述与代表作。
 > 论文原文 PDF 见 [../papers/](../papers/)。
 
 ## 0. TL;DR
 
 - LLM 部署后参数静态，但任务、环境、知识在变 — 这是"自进化"的核心动机。
 - 2025–2026 出现了多篇系统综述，把这条线归并到统一框架下：可演化的对象（model / memory / tools / architecture）× 何时演化（test-time / offline / lifelong）× 如何演化（in-context / SFT / RL / self-edit）。
-- 工程上能落地的范式可大致归为 4 类：① 经验回放 ② Skill 固化 ③ 蒸馏到小模型 ④ Self-Edit / 元认知。
+- 工程上能落地的范式大致 4 类：① 经验回放 ② Skill 固化 ③ 蒸馏到小模型 ④ Self-Edit / 元认知。
+- **2026 的趋势**：从"agent 单向自进化"转向 **agent ↔ 数据 / 环境 / skill 库的双向共进化**；从"人造 reward 监督"转向 **reward-free 内禀进化**；从"raw trajectory 存档"转向 **可执行的层次化 skill 库**。
 
 ---
 
@@ -16,24 +17,20 @@
 ### 1.1 A Survey of Self-Evolving Agents: What, When, How, and Where to Evolve on the Path to ASI
 
 - **arXiv**: [2507.21046](https://arxiv.org/abs/2507.21046)（2025-07 首版，2026-01 v4，TMLR 2026）
-- **本地**: `papers/2507.21046_survey_self_evolving_agents.pdf`
+- **本地**: `papers/2507.21046_survey_self_evolving_agents.pdf`（77 页）
 - **价值**: 目前最系统、覆盖最全的一篇。把"自进化"拆成四维度：
-  - **What** to evolve: model parameters / memory / tools / architecture
+  - **What** to evolve: model / memory / tools / architecture
   - **When** to evolve: test-time / offline batch / lifelong
-  - **How** to evolve: in-context learning / SFT / RLHF / Self-modification
+  - **How** to evolve: in-context / SFT / RLHF / Self-modification
   - **Where** to apply: single-agent / multi-agent / agent-environment co-evolution
-- **对你三分类的映射**:
-  - 经验回放 → 在 *Memory* + *Test-time in-context* 这一格
-  - Skill 固化 → 在 *Memory / Tools* + *Offline + Lifelong* 这一格
-  - 蒸馏到小模型 → 在 *Model* + *Offline SFT/RL* 这一格
-- **配套资源**: [Awesome-Self-Evolving-Agents (XMUDeepLIT)](https://github.com/XMUDeepLIT/Awesome-Self-Evolving-Agents)
+- **配套**: [Awesome-Self-Evolving-Agents (XMUDeepLIT)](https://github.com/XMUDeepLIT/Awesome-Self-Evolving-Agents)
 
 ### 1.2 A Comprehensive Survey of Self-Evolving AI Agents — Bridging Foundation Models and Lifelong Agentic Systems
 
 - **arXiv**: [2508.07407](https://arxiv.org/abs/2508.07407)（Fang et al., 2025）
-- **本地**: `papers/2508.07407_comprehensive_survey_self_evolving_ai_agents.pdf`
-- **价值**: 提出统一反馈环框架 `System Inputs → Agent System → Environment → Optimizer`；提出 Asimov 风格的三层原则 **Endure（安全适应）/ Excel（性能不退化）/ Evolve（自主演化）**。
-- **配套资源**: [EvoAgentX 框架 + Awesome list](https://github.com/EvoAgentX/Awesome-Self-Evolving-Agents)
+- **本地**: `papers/2508.07407_comprehensive_survey_self_evolving_ai_agents.pdf`（55 页）
+- **价值**: 提出统一反馈环框架 `System Inputs → Agent System → Environment → Optimizer`；提出三层原则 **Endure / Excel / Evolve**。
+- **配套**: [EvoAgentX 框架](https://github.com/EvoAgentX/Awesome-Self-Evolving-Agents)
 
 ### 1.3 辅助综述
 
@@ -42,145 +39,172 @@
 | A Survey on the Optimization of LLM-based Agents | [2503.12434](https://arxiv.org/abs/2503.12434) | Optimization 视角；轨迹构造、反馈式自修正、多 agent 协作训练 |
 | The Landscape of Agentic Reinforcement Learning for LLMs | [2509.02547](https://arxiv.org/abs/2509.02547) | 500+ 篇 agentic RL 综述；planning / tool use / memory / self-improvement 各自成章 |
 | Agent Skills from the Perspective of Procedural Memory | [TechRxiv](https://www.techrxiv.org/users/1016212/articles/1376445) | 专门讲 skill induction & procedural memory 一支 |
-| A Systematic Survey of Self-Evolving Agents: From Model-Centric to Environment-Driven Co-Evolution | TechRxiv 2026-02 | 把"模型中心进化"与"环境驱动共进化"对立起来讨论 |
+| A Systematic Survey of Self-Evolving Agents: Model-Centric to Environment-Driven Co-Evolution | TechRxiv 2026-02 | "Model-Centric / Environment-Centric / Model-Env Co-Evolution"三分法 |
 
 ---
 
 ## 2. 范式 ① 记忆检索 / 经验回放（Training-Free）
 
-不动模型参数，只改"上下文"或"外部记忆"。最容易落地，也是 2025 年最热的子方向。
+不动模型参数，只改"上下文"或"外部记忆"。最容易落地。
 
 ### 2.1 Contextual Experience Replay (CER)
-- **arXiv**: [2506.06698](https://arxiv.org/abs/2506.06698)
-- **本地**: `papers/2506.06698_contextual_experience_replay.pdf`
-- **要点**: 把过往轨迹（环境动态 + 决策模式）累积、合成进动态记忆缓冲，在新任务里检索注入上下文。完全 training-free。
-- **适用**: Web 导航、长程交互任务。
+- **arXiv**: [2506.06698](https://arxiv.org/abs/2506.06698) · **本地**: `papers/2506.06698_contextual_experience_replay.pdf`
+- **要点**: 把过往轨迹（环境动态 + 决策模式）累积、合成进动态记忆缓冲，新任务里检索注入上下文。training-free。
 
-### 2.2 Self-Generated In-Context Examples（NeurIPS 2025, Sarukkai et al.）
-- **要点**: agent 一旦成功解一个任务，就把完整成功轨迹存下；下次直接 few-shot 进 prompt。ALFWorld 73% → 89%（部分设定 → 93%），不调权重就能逼近大模型。
-- **取舍**: 实现极简，但上下文长度有限，需要 curation 策略。
+### 2.2 EvolveR: Self-Evolving LLM Agents through an Experience-Driven Lifecycle ⭐ 2026
+- **arXiv**: [2510.16079](https://arxiv.org/abs/2510.16079)（2025-10 首版，2026-02 ICLR 2026）
+- **本地**: `papers/2510.16079_evolver_experience_lifecycle.pdf`
+- **代码**: <https://github.com/Edaizi/EvolveR>
+- **要点**: 论文给的范式四分法本身就是个很好的 mental model：
+  - Stateless Execution（标准 agent，扔掉经验）
+  - Learning by Raw Trajectories（存原始轨迹再检索 → ExpeL 一支）
+  - Learning via External Scribing（靠外部 teacher 蒸馏 insight）
+  - **EvolveR**: 完整闭环 — agent 自己离线把轨迹蒸馏成抽象 *strategic principles*，在线检索调用 + RL 更新策略。
 
-### 2.3 ExpeL（Zhao et al., 2024）
-- **要点**: 轨迹蒸馏成可编辑的自然语言 *insights*，按相关性检索注入。后续大量工作的 baseline。
+### 2.3 Self-Generated In-Context Examples（NeurIPS 2025, Sarukkai et al.）
+- **要点**: 成功轨迹存下做 few-shot。ALFWorld 73% → 89%（部分 → 93%）。
 
-### 2.4 EvolveR（ICLR 2026）
-- **OpenReview**: <https://openreview.net/forum?id=sooLoD9VSf>
-- **要点**: 完整的"经验生命周期"：
-  - **Offline Self-Distillation**: 把轨迹综合成一个 *abstract reusable strategic principles* 的库；
-  - **Online Interaction**: 主动检索 principles 指导决策；
-  - 与 RL 更新结合，形成闭环。
+### 2.4 ExpeL（Zhao et al., 2024）
+- **要点**: 轨迹蒸馏成自然语言 *insights*，按相关性检索注入。后续 baseline 之一。
 
 ### 2.5 MUSE（Yang et al., 2025）
-- **要点**: Plan-Execute-Reflect-Memorize 四阶段，建分层记忆（strategic / procedural / tool-use）。
+- **要点**: Plan-Execute-Reflect-Memorize 四阶段 + 分层记忆（strategic / procedural / tool-use）。
 
-### 2.6 反例 / 警示
-- **SPEAR**（arXiv:2509.22601）: 朴素 experience replay 会触发 **entropy collapse** 和 **exploration shrinkage**，尤其在 1.5B–7B 小模型上。引入 curriculum + covariance clipping 才能缓解。
-- **Misevolution / "Your agent may misevolve"** (ICLR 2026): 自进化的安全风险。
+### 2.6 ERL — Experiential Reflective Learning（ICLR 2026 MemAgents Workshop）⭐ 2026
+- **要点**: 构建"启发式池"作为经验记忆；在新环境下 +7.8% 相对 ReAct，56.1% 总体成功率。
+
+### 2.7 反例 / 警示
+- **SPEAR**（arXiv:2509.22601）: 朴素 replay 会引发 entropy collapse / exploration shrinkage。
+- **Misevolution**（arXiv:2509.26354, ICLR 2026）: 自进化过程的紧急安全风险。
+- **Alignment Tipping Process**（arXiv:2510.04860）: 自进化把 agent 推离对齐的机理分析。
 
 ---
 
 ## 3. 范式 ② Skill 固化（Skill Induction & Library Evolution）
 
-从 Voyager（2023）的固定 skill library 出发，2025 年的关键演进是 **skill 集合本身也在演化**。
+**2026 这一支爆发了**：从 Voyager 固定 skill library，演进到"skill 集合本身 + 选择策略 + verifier 三者联合进化"。
 
-### 3.1 MemSkill（arXiv:2602.02474）
-- **要点**: skill 选择策略 + skill 集本身 *联合优化*。设计器周期性 review 失败案例，提出新的 skill 或精炼旧 skill。
+### 3.1 MemSkill: Learning and Evolving Memory Skills ⭐ 2026
+- **arXiv**: [2602.02474](https://arxiv.org/abs/2602.02474)（2026-02）
+- **本地**: `papers/2602.02474_memskill.pdf`
+- **要点**: 把"记忆操作"（extract / consolidate / prune）当成可学习的 *memory skill*。controller 选 skill，executor 执行，designer 周期性 review 失败案例 → 提出新 skill / 精炼旧 skill。
 - **评测**: LoCoMo / LongMemEval / HotpotQA / ALFWorld。
 
-### 3.2 SkillWeaver（Zheng et al., 2025）
-- **要点**: 在 web agent 上自动发现并精炼可复用 skill；和 MemSkill 是同一思路的 web 落地。
+### 3.2 SkillRL: Recursive Skill-Augmented RL ⭐ 2026
+- **arXiv**: [2602.08234](https://arxiv.org/abs/2602.08234)（2026-02）
+- **本地**: `papers/2602.08234_skillrl_recursive_skill_rl.pdf`
+- **要点**: 三件套：
+  - *Experience-based distillation* 建分层 **SkillBank**
+  - 自适应检索（区分通用 vs 任务特定启发式）
+  - **Recursive evolution**: skill 库与 RL 策略**共同进化**
+- **意义**: 把 skill induction 第一次正式嵌进 RL 训练循环。
 
-### 3.3 Voyager（2023, 开山之作）
-- **要点**: 在 Minecraft 中按"自然语言函数"积累 skill library，被几乎所有后续工作引为 baseline。
+### 3.3 EvoSkills: Co-Evolutionary Verification ⭐ 2026
+- **arXiv**: [2604.01687](https://arxiv.org/abs/2604.01687)（2026-04）
+- **本地**: `papers/2604.01687_evoskills_co_evolutionary_verification.pdf`
+- **要点**: Skill Generator + **Surrogate Verifier** 共同进化。Verifier 在没有 ground-truth test 的前提下给出可用反馈，agent 由此构造多文件 skill 包。
+- **评测**: SkillsBench；在 Claude Code / Codex 上都是五个 baseline 中最高 pass rate；可泛化到另外 6 个 LLM。
 
-### 3.4 Agentic Context Engineering (ACE)
-- **要点**: 把"上下文"当成一份不断累积的 *playbook*；模块化增量更新，可用于离线 prompt 优化或在线记忆适配。这条线把 skill 看作"可执行的 playbook 片段"。
+### 3.4 SkillOS: Learning Skill Curation ⭐ 2026
+- **arXiv**: [2605.06614](https://arxiv.org/abs/2605.06614)（2026-05）
+- **本地**: `papers/2605.06614_skillos_skill_curation.pdf`
+- **要点**: 把"skill curation（如何挑、合并、淘汰 skill）"本身当成 RL 的学习目标。SkillRepo 中的 skill 演化成结构化 Markdown，编码高阶 meta-skill。
+
+### 3.5 SkillWeaver / Voyager（baseline）
+- Voyager (2023): 固定 skill library 开山作。
+- SkillWeaver (Zheng et al., 2025): web agent 自动发现 + 精炼可复用 skill。
 
 ---
 
 ## 4. 范式 ③ RL / 蒸馏到小模型（让小模型对齐大模型行为）
 
-把强模型的完整 agentic 轨迹（不止 CoT，还包括工具调用）蒸馏进 sLM。
-
 ### 4.1 Distilling LLM Agent into Small Models with Retrieval and Code Tools
-- **arXiv**: [2505.17612](https://arxiv.org/abs/2505.17612)（Kang et al., NeurIPS 2025）
-- **本地**: `papers/2505.17612_distilling_llm_agent_into_small_models.pdf`
+- **arXiv**: [2505.17612](https://arxiv.org/abs/2505.17612)（NeurIPS 2025）· **本地**: `papers/2505.17612_distilling_llm_agent_into_small_models.pdf`
 - **代码**: <https://github.com/Nardien/agent-distillation>
-- **要点**: 0.5B / 1.5B / 3B 学生模型，配 retrieval + code tool，达到 1.5B / 3B / 7B CoT 蒸馏模型水平。两个核心 trick：
-  - **First-thought prefix**: 让 teacher 生成更高质量的轨迹起点
-  - **Self-consistent action**: 提升 test-time 鲁棒性
+- **要点**: 0.5B / 1.5B / 3B 学生 + retrieval + code tool，达到 1.5B / 3B / 7B CoT 蒸馏水平。两 trick：first-thought prefix + self-consistent action。
 
 ### 4.2 Structured Agent Distillation
-- **arXiv**: [2505.13820](https://arxiv.org/abs/2505.13820)
-- **本地**: `papers/2505.13820_structured_agent_distillation.pdf`
-- **要点**: 把轨迹切成 `[REASON]` / `[ACT]` 两类 span，对各自施加 span-specific loss；比 token-level 蒸馏更稳。ALFWorld / HotpotQA-ReAct / WebShop 上一致优于 baseline。
-- **核心论点**: token-level 蒸馏让学生学会表面动作但学不到背后 rationale。
+- **arXiv**: [2505.13820](https://arxiv.org/abs/2505.13820) · **本地**: `papers/2505.13820_structured_agent_distillation.pdf`
+- **要点**: 轨迹切 `[REASON]` / `[ACT]` 两类 span，分别施加 loss。优于 token-level 蒸馏。
 
-### 4.3 Search, Do not Guess（arXiv:2604.04651）
-- **要点**: 朴素蒸馏会把"参数化幻觉"也学过去（小模型从教师轨迹里学到"我记得 X"这种伪知识）。解法：always-search 策略 + 阈值过滤，只保留真的调用工具的轨迹。
+### 4.3 CoEvolve: Agent-Data Mutual Evolution ⭐ 2026
+- **arXiv**: [2604.15840](https://arxiv.org/abs/2604.15840)（2026-04）
+- **本地**: `papers/2604.15840_coevolve_agent_data_mutual_evolution.pdf`
+- **要点**: 解决"static 数据分布跟不上 agent 行为演化"的问题。从 rollout 提取 *forgetting* 和 *uncertainty* 信号识别失败模式 → LLM 合成新任务 → 环境验证 → 更新数据分布。
+- **结果**: AppWorld + BFCL 在 Qwen2.5-7B / Qwen3-4B / Qwen3-30B-A3B 上分别 +19.43% / +15.58% / +18.14% 绝对提升。
 
-### 4.4 On-Policy Distillation（Thinking Machines Lab, 2025）
-- **链接**: <https://thinkingmachines.ai/blog/on-policy-distillation/>
-- **要点**: 在线策略蒸馏，复现 Qwen3 的推理性能但成本远低于纯 RL；强调 on-policy 比 off-policy SFT 在持续学习场景下遗忘更少。
+### 4.4 Reward-Free Self-Evolution via World Knowledge Exploration ⭐ 2026
+- **arXiv**: [2604.18131](https://arxiv.org/abs/2604.18131)（2026-04）
+- **本地**: `papers/2604.18131_reward_free_self_evolution_world_knowledge.pdf`
+- **要点**: 主张当前 agent 的 "self-evolution" 仍依赖外部 reward — 没有人类信号就停摆。设计一个 outcome-based reward：以"自生成 world knowledge 是否提升下游成功率"为目标，训练 agent 在没见过的环境里**主动探索 + 自总结**，且这套 reward 只在训练阶段用。
+- **意义**: 朝"内禀元进化"迈了一步，呼应 Liu et al. ICML 2025 的 metacognitive learning 主张。
 
-### 4.5 AgentArk（arXiv:2602.03955）
-- **要点**: 把 multi-agent debate 蒸馏成单 agent 的 single forward pass。三招组合：R-SFT（共识训练） + 轨迹多样化扩增 + Process-aware reward model。
+### 4.5 AutoTTS: LLMs Improving LLMs ⭐ 2026
+- **arXiv**: [2605.08083](https://arxiv.org/abs/2605.08083)（2026-05）
+- **本地**: `papers/2605.08083_autotts_llms_improving_llms.pdf`
+- **要点**: Test-time scaling (TTS) 通常靠人工设计策略。AutoTTS 改成"环境驱动"框架，让 TTS 策略**被自动发现**。数学推理 benchmark 上发现的策略迁移到新 benchmark / 新模型规模仍有效；整套发现仅花 \$39.9 / 160 分钟。
 
-### 4.6 Self-Improving LLM Agents at Test-Time
-- **arXiv**: [2510.07841](https://arxiv.org/abs/2510.07841)
-- **本地**: `papers/2510.07841_self_improving_llm_agents_test_time.pdf`
-- **要点**: 两套机制 —
-  - **TT-SI**: 模型对自己 uncertain 的样本生成补充训练数据，自训自学；
-  - **TT-D**: 由更强模型生成类似样本做蒸馏。
-- TT-SI 平均 +5.48% 精度，且训练样本仅为常规方法的 1/68。
+### 4.6 其他
+- **Self-Improving LLM Agents at Test-Time** [2510.07841](https://arxiv.org/abs/2510.07841)（本地有）: TT-SI / TT-D，+5.48%，训练样本 1/68。
+- **Search, Do not Guess**（arXiv:2604.04651, 2026-04）: 解决朴素蒸馏让小模型继承"参数化幻觉"的问题；强制 always-search 策略 + 阈值过滤轨迹。
+- **On-Policy Distillation**（[Thinking Machines blog, 2025](https://thinkingmachines.ai/blog/on-policy-distillation/)）: on-policy 蒸馏复现 Qwen3 推理性能，成本远低于纯 RL。
+- **AgentArk**: multi-agent debate → single-pass agent 蒸馏。
 
 ---
 
-## 5. 范式 ④ Self-Edit / 元认知（你列表里漏掉的一类）
-
-不是改记忆、也不是改权重，而是改 *agent 自身的代码 / prompt / heuristic*。
+## 5. 范式 ④ Self-Edit / 元认知 / 多 agent 自组织
 
 ### 5.1 SICA: Self-Improving Coding Agent（Robeyns et al., 2025）
-- **要点**: agent 评估自己在 benchmark 上的表现 → 用 LLM 提议修改自己的源码 / prompt → 应用并 re-evaluate → 保留有改进的。SWE-Bench 类任务上 17–53% 提升，部分场景成本/时间也下降。
+- agent 自评 → 用 LLM 改自己的源码/prompt/heuristic → 应用 → 再评。SWE-Bench 类任务 +17–53%。
 
 ### 5.2 Intrinsic Metacognitive Learning（Liu et al., ICML 2025 position）
-- **要点**: 主张当前所有"反思类"工作只是 *self-improvement 1.0* — 任务级。真正的 self-improving agent 需要：
-  - **Metacognitive knowledge**: 准确自评估
-  - **Metacognitive planning**: 决定下一步学什么、怎么学
-  - **Metacognitive evaluation**: 判断学习是否真的有效
-- 这是当前 SOTA 的清晰差距。
+- 当前所有"反思类"工作只是 self-improvement 1.0；真正自进化需要 metacognitive knowledge / planning / evaluation 三件套。
 
-### 5.3 Misevolution risks（ICLR 2026, "Your Agent May Misevolve"）
-- **要点**: 自进化引入的新型安全风险（恶意 skill 累积、错误 insight 放大、对抗性轨迹注入等）。做自进化 agent 早晚要看。
+### 5.3 OneManCompany (OMC): From Skills to Talent ⭐ 2026
+- **arXiv**: [2604.22446](https://arxiv.org/abs/2604.22446)
+- **要点**: multi-agent 系统不是"叠 skill"，而是模仿公司**自我组织** — 自己招聘、重构、审查工作。基本单元是 "role"，不是 model 或 skill。
+
+### 5.4 Self-Healing Framework for Reliable LLM-Based Agents ⭐ 2026
+- **arXiv**: [2605.06737](https://arxiv.org/abs/2605.06737)
+- **要点**: 集成 failure detection + reliability assessment + 自动恢复（adaptive replanning + corrective prompting）。比"自进化"更偏"自修复"，但属于 lifelong agent 的同一谱系。
+
+### 5.5 Agentic Context Engineering (ACE)
+- 上下文当 *playbook*，模块化增量更新。
 
 ---
 
-## 6. 评测 benchmark（不绕过）
+## 6. 评测 benchmark
 
 | Benchmark | 关注点 |
 |---|---|
-| **MemBench** (Tan et al., 2025) | factual vs reflective memory，三维：effectiveness / efficiency / capacity |
-| **MemoryAgentBench** (Hu et al., 2025) | 四类记忆能力：accurate retrieval / test-time learning / long-range understanding / **selective forgetting**（当前系统普遍跪在最后一项） |
+| **MemBench** (Tan et al., 2025) | factual vs reflective memory；effectiveness / efficiency / capacity 三维 |
+| **MemoryAgentBench** (Hu et al., 2025) | 四类记忆能力，**selective forgetting** 普遍跪 |
+| **StuLife** ⭐ 2026 | Experience-Driven Lifelong Learning (ELL) 基准，强调长程记忆 + 自驱探索 + 内化 |
+| **SkillsBench** ⭐ 2026 | EvoSkills 提出；评估多文件 skill 包的 pass rate |
 | **Evo-Memory** | 流式 test-time memory evolution 基准 |
-| **ALFWorld / WebShop / HotPotQA-ReAct** | 经验回放 + skill induction + 蒸馏类工作的共同试金石 |
+| **ALFWorld / WebShop / HotPotQA-ReAct / AppWorld / BFCL** | 经典试金石 |
 
 ---
 
-## 7. 建议阅读顺序
+## 7. 建议阅读顺序（更新版）
 
-1. **第 1 天**：读 `2507.21046` 第 3–5 节，建立分类骨架。
-2. **第 2 天**：读 `2508.07407` 的统一反馈环框架，对照自己的三分类做加法。
-3. **第 3–4 天**：每个范式精读 2 篇代表作：
-   - 经验回放：`2506.06698` (CER) + EvolveR (OpenReview)
-   - Skill：MemSkill + ACE
-   - 蒸馏：`2505.17612` + `2505.13820`
-   - Self-Edit：SICA 论文 + Liu et al. ICML 2025 position paper
-4. **第 5 天**：扫 [Awesome-Self-Evolving-Agents](https://github.com/XMUDeepLIT/Awesome-Self-Evolving-Agents) README 表格补漏，定向跟踪 ICLR 2026 / NeurIPS 2025 新论文。
+1. **D1 骨架**: `2507.21046` §3–§5 + `2508.07407` 反馈环框架（2 篇综述）。
+2. **D2 经验回放支**: `2506.06698` CER + `2510.16079` EvolveR（看清"从原始轨迹检索 → principle 蒸馏"的演进）。
+3. **D3 Skill 支（2026 集中爆发）**: 读 SkillRL → MemSkill → EvoSkills → SkillOS 一条线，能完整看出 "skill 库 + 选择策略 + verifier 三者协同进化" 的成型过程。
+4. **D4 蒸馏 & RL 支**: `2505.17612` + `2505.13820` 打底，CoEvolve（2604.15840）看数据共进化，Reward-Free Self-Evolution（2604.18131）看 reward-free 方向。
+5. **D5 元认知 + 安全**: SICA + Liu et al. ICML 2025 + Misevolution / Alignment Tipping 两篇风险论文。
+6. **持续跟踪**: ICLR 2026 Lifelong Agent (LLA) workshop 和 MemAgents workshop；Awesome list 表格补遗。
 
 ---
 
-## 8. 待跟踪
+## 8. 关键趋势观察（2025 vs 2026）
 
-- ICLR 2026 评审中关于自进化安全（"misevolve"）的几篇论文最终版
-- EvoAgentX 框架（[GitHub](https://github.com/EvoAgentX/Awesome-Self-Evolving-Agents)）的实际复现质量
-- On-policy distillation 是否会替代 PPO / GRPO 成为蒸馏 agent 的默认方案
+| 维度 | 2025 主流 | 2026 演进 |
+|---|---|---|
+| 记忆形态 | raw trajectory + 自然语言 insight | **层次化 skill 库 / 可执行 markdown** |
+| 进化对象 | agent 单向自进化 | **agent ↔ 数据 / 环境 / skill 库共进化** |
+| 监督形态 | 外部 reward / human label | 出现 **reward-free intrinsic motivation** 路线 |
+| RL 与 skill 关系 | 解耦：RL 训 policy，skill 库分离 | **SkillRL / SkillOS：skill 与 RL 训练在一个循环里** |
+| 验证 | benchmark 黑盒打分 | **Surrogate Verifier 共同进化**（EvoSkills） |
+| 单 vs 多 agent | 主要单 agent | OMC 等"组织级"自组织 multi-agent 系统出现 |
+| 安全 | 偶有提及 | misevolve / alignment tipping 成单独研究方向 |
